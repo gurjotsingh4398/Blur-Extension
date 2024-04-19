@@ -212,14 +212,18 @@ const blurTextOrExpression = (node, textsToBlur) => {
     let modifiedText = node.nodeValue;
     if (modifiedText.trim() === '') return;
     textsToBlur.forEach((text) => {
+      // const regex =  new RegExp(`/\b(?:${text})\b/i`);
       const regex = new RegExp(text, 'g');
-      // console.log(text, modifiedText, regex);
-      if (regex.test(modifiedText.toLowerCase())) {
+      if (regex.test(modifiedText)) {
+        // console.log(text, modifiedText,regex.test(modifiedText));
         modifiedText = modifiedText.replace(regex, '<blur>$&</blur>');
+        // console.log(modifiedText)
       }
     });
 
+    
     if (node.nodeValue !== modifiedText) {
+      // console.log(modifiedText)
       const blurParentElement = document.createElement('blurParent');
       blurParentElement.innerHTML = modifiedText;
       node.parentNode.replaceChild(blurParentElement, node);
@@ -253,11 +257,35 @@ const removeBlur = async (elem) => {
   await save('blurTexts', currentTexts);
   // textsToBlur = currentTexts;
   document.querySelectorAll('blur').forEach((node) => {
-      if ((new RegExp(text, 'g')).test(node.innerText.toLowerCase())) {
+      if ((new RegExp(text, 'g')).test(node.innerText)) {
           node.parentNode.replaceChild(document.createTextNode(node.innerText), node);
       }
   });
 }
+
+const blurHighlightedSelection = () => {
+  const selection = window.getSelection();
+  const node = selection.anchorNode;
+  const text = selection.toString();
+
+  if (node.nodeType === 3) {
+    // Text node
+    let modifiedText = node.nodeValue;
+    if (modifiedText.trim() === '') return;
+
+    const regex = new RegExp(text, 'g');
+
+    if (regex.test(modifiedText)) {
+      modifiedText = modifiedText.replace(regex, '<blur>$&</blur>');
+    }
+
+    if (node.nodeValue !== modifiedText) {
+      const blurParentElement = document.createElement('blurParent');
+      blurParentElement.innerHTML = modifiedText;
+      node.parentNode.replaceChild(blurParentElement, node);
+    }
+  }
+};
 
 
 const showDock = async () => {
@@ -409,7 +437,7 @@ const showDock = async () => {
         >Multi Blur</span
       >
     </button>
-    <button class="priv-share-button priv-share-dock-item">
+    <button id="priv-share-highlight-blur-button" class="priv-share-button priv-share-dock-item">
       <svg
         width="18"
         height="18"
@@ -710,6 +738,9 @@ const showDock = async () => {
 
   const addBlurButton = document.getElementById('priv-share-add-blur');
   addBlurButton.addEventListener('click', addBlur);
+
+  const highlightBlurButton =  document.getElementById('priv-share-highlight-blur-button');
+  highlightBlurButton.addEventListener('click', blurHighlightedSelection);
 
 
 }
