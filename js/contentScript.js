@@ -288,6 +288,206 @@ const blurHighlightedSelection = () => {
 };
 
 
+// =======  BLUR Click Feature START ==========
+
+function getElementOnCoordinates(x, y) {
+  console.log(document.elementFromPoint(x, y))
+  return document.elementFromPoint(x, y);
+}
+
+function getCurrentElementCoordinates(currentElement) {
+  return currentElement.getBoundingClientRect();
+  //   .dottedLineTop {
+  //     position: absolute;
+  //     border-top: 1px dotted #fff000;
+  //     width: 100%;
+  //     top: 391.265625px;
+  // }
+  // var dottedLineTop = document.createElement('div');
+  // dottedLineTop.classList.add('dottedLineTop');
+  // document.body.appendChild(dottedLineTop);
+}
+
+let currentElement;
+
+function blurArea(event) {
+  event.preventDefault();
+  const { x, y, width, height } = getCurrentElementCoordinates(currentElement);
+  console.log(x, y, width, height);
+
+  const scrollX = window.scrollX || window.pageXOffset;
+  const scrollY = window.scrollY || window.pageYOffset;
+
+  const blurAreaDiv = document.createElement('div');
+
+  blurAreaDiv.style.position = 'absolute';
+  blurAreaDiv.style.zIndex = '1000';
+  blurAreaDiv.style.top = `${y + scrollY}px`;
+  blurAreaDiv.style.left = `${x + scrollX}px`;
+  blurAreaDiv.style.width = `${width}px`;
+  blurAreaDiv.style.height = `${height}px`;
+  // blurAreaDiv.style.background = 'rgba(255, 255, 255, 0.5)'; // Adjust the background color and transparency as needed
+  blurAreaDiv.style.backdropFilter = 'blur(10px)'; // Adjust the blur strength as needed
+
+  blurAreaDiv.classList.add('blurClass');
+
+  document.body.appendChild(blurAreaDiv);
+}
+
+function handleMouseOver(event) {
+  if (currentElement) {
+    currentElement.classList.remove('bordered');
+    currentElement.removeEventListener('click', blurArea);
+
+    // dottedLine.style.display = none;
+    // outline: red solid 2px !important
+  }
+
+  let [x, y] = [event.clientX, event.clientY];
+  currentElement = getElementOnCoordinates(x, y);
+
+  let privShareDock = document.getElementById('priv-share-dock');
+  let isWithinPrivShareDock = privShareDock.contains(currentElement);
+
+  if(isWithinPrivShareDock) {
+    return;
+  }
+
+  const { left, top, bottom, right, width, height } =
+    getCurrentElementCoordinates(currentElement);
+  console.log(left, top, bottom, right);
+
+  const dottedLines = document.getElementById('dottedLines');
+  const topLine = document.getElementById('dottedLineTop');
+  const bottomLine = document.getElementById('dottedLineBottom');
+  const leftLine = document.getElementById('dottedLineLeft');
+  const rightLine = document.getElementById('dottedLineRight');
+
+  topLine.style.top = `${top + window.scrollY}px`;
+  topLine.style.left = `${window.scrollX}px`;
+  bottomLine.style.top = `${bottom + window.scrollY - 1}px`;
+  bottomLine.style.left = `${window.scrollX}px`;
+
+  leftLine.style.left = `${left + window.scrollX}px`;
+  leftLine.style.top = `${window.scrollY}px`;
+  rightLine.style.left = `${right + window.scrollX - 1}px`;
+  rightLine.style.top = `${window.scrollY}px`;
+
+  dottedLines.classList.remove('hide');
+  dottedLines.classList.add('display');
+
+  currentElement.classList.add('bordered');
+  currentElement.addEventListener('click', blurArea);
+  // window.addEventListener('click', (e) => {
+  //   console.log(e, currentElement);
+  //   blurArea(left + window.scrollX, top + window.scrollY, width, height);
+  // });
+}
+
+let blurWithClickEnabled = false;
+
+const showBorder = () => {
+  if (blurWithClickEnabled) {
+    blurWithClickEnabled = false;
+    window.removeEventListener('mouseover', handleMouseOver);
+
+    const dottedLines = document.getElementById('dottedLines');
+    dottedLines.classList.add('hide');
+    dottedLines.classList.remove('display');
+
+    return;
+  }
+
+  blurWithClickEnabled = true;
+
+  window.addEventListener('mouseover', handleMouseOver);
+};
+
+// =======  BLUR Click Feature END ==========
+
+
+
+
+// =======  BLUR Area Feature START ==========
+
+let isCreatingOverlay = false;
+let isDragging = false;
+let startX, startY, endX, endY;
+
+function toggleOverlayCreation() {
+  isCreatingOverlay = !isCreatingOverlay;
+
+  // toggleButton.textContent = isCreatingOverlay ? 'Stop' : 'Start';
+
+  if (isCreatingOverlay) {
+    document.addEventListener('mousedown', startOverlayCreation);
+  } else {
+    document.removeEventListener('mousedown', startOverlayCreation);
+  }
+}
+
+function startOverlayCreation(e) {
+  const areaBlurButton = document.getElementById('priv-share-area-blur-button');
+  if (e.target === areaBlurButton) {
+    console.log('button');
+    return;
+  }
+
+  event.preventDefault();
+
+  isDragging = true;
+  startX = e.clientX + window.pageXOffset;
+  startY = e.clientY + window.pageYOffset;
+
+  // Create a new overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  document.body.appendChild(overlay);
+
+  // Set initial position and dimensions
+  overlay.style.left = startX + 'px';
+  overlay.style.top = startY + 'px';
+  overlay.style.width = '0';
+  overlay.style.height = '0';
+
+  // Add event listeners for this overlay
+  document.addEventListener('mousemove', handleMouseMove);
+  document.addEventListener('mouseup', handleMouseUp);
+
+  function handleMouseMove(e) {
+    if (isDragging) {
+      endX = e.clientX + window.pageXOffset;
+      endY = e.clientY + window.pageYOffset;
+
+      const width = endX - startX;
+      const height = endY - startY;
+
+      // Update overlay dimensions
+      overlay.style.width = width + 'px';
+      overlay.style.height = height + 'px';
+    }
+  }
+
+  function handleMouseUp() {
+    if (isDragging) {
+      isDragging = false;
+
+      // Output dimensions and position
+      console.log('Width:', Math.abs(endX - startX));
+      console.log('Height:', Math.abs(endY - startY));
+      console.log('Position (X, Y):', startX, startY);
+
+      // Remove event listeners for this overlay
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    }
+  }
+}
+
+// =======  BLUR Area Feature END ==========
+
+
+
 const showDock = async () => {
 
   const dockHtml = `<div class="priv-share-dock-secondary">
@@ -461,7 +661,7 @@ const showDock = async () => {
         >Highlight Blur</span
       >
     </button>
-    <button class="priv-share-button priv-share-dock-item">
+    <button id="priv-share-click-blur-button" class="priv-share-button priv-share-dock-item">
       <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -488,7 +688,7 @@ const showDock = async () => {
         >Click Blur</span
       >
     </button>
-    <button class="priv-share-button priv-share-dock-item">
+    <button id="priv-share-area-blur-button" class="priv-share-button priv-share-dock-item">
       <svg
         width="18"
         height="18"
@@ -743,6 +943,12 @@ const showDock = async () => {
   highlightBlurButton.addEventListener('click', blurHighlightedSelection);
 
 
+  const clickBlurButton = document.getElementById('priv-share-click-blur-button');
+  clickBlurButton.addEventListener('click', showBorder);
+  
+
+  const areaBlurButton = document.getElementById('priv-share-area-blur-button');
+  areaBlurButton.addEventListener('click', toggleOverlayCreation);
 }
 
 showDock();
