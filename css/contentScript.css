@@ -3,6 +3,60 @@ blur {
     text-shadow: 0 0 1rem #999999;
 }
 
+.overlay {
+    position: absolute;
+    /* border: 2px solid red; */
+    pointer-events: none; /* Make the overlay not block mouse events */
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+}
+
+
+.blurClass {
+    color: transparent !important;
+    text-shadow: 0 0 1rem #999999 !important;
+  }
+  
+
+.bordered {
+    outline: red solid 2px !important;
+    /* box-shadow:inset 0px 0px 0px 10px #f00; */
+    z-index: 1000;
+}
+
+.display {
+    display: block;
+}
+
+.hide {
+    display: none;
+}
+
+.dottedLine {
+    position: absolute;
+    z-index: 1000;
+  }
+  
+  #dottedLineTop {
+    border-top: 1px dotted #ff0000;
+    width: 100%;
+  }
+
+  #dottedLineBottom {
+    border-top: 1px dotted #ff0000;
+    width: 100%;
+  }
+
+  #dottedLineLeft {
+    border-left: 1px dotted #ff0000;
+    height:100%;
+  }
+
+  #dottedLineRight {
+    border-right: 1px dotted #ff0000;
+    height: 100%;
+  }
+
 #priv-share-dock {
     font-family: monospace;
     color: #fff;
@@ -10,7 +64,7 @@ blur {
     /* background: #252528; */
     text-align: center;
     line-height: normal;
-    z-index: 100;
+    z-index: 1001;
 }
 
 #priv-share-dock svg {
