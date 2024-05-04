@@ -1,4 +1,4 @@
-
+let saveMode = false;
 
 const multiBlurOpenAnimation = () => {
   const multiBlurContent = document.getElementById(
@@ -10,10 +10,10 @@ const multiBlurOpenAnimation = () => {
   multiBlurContent.classList.toggle('priv-share-dock-show-multi-blur-content');
 
   // hiding main dock buttons
-  const blurAdjustmentBlock = document.getElementById(
-    'priv-share-blur-adjustment-block'
-  );
-  blurAdjustmentBlock.classList.toggle('priv-share-dock-item-hide');
+  // const blurAdjustmentBlock = document.getElementById(
+  //   'priv-share-blur-adjustment-block'
+  // );
+  // blurAdjustmentBlock.classList.toggle('priv-share-dock-item-hide');
 
   const mainDockButtons = document.querySelectorAll(
     '.priv-share-dock-main > .priv-share-dock-item'
@@ -43,9 +43,9 @@ const multiBlurClosingAnimation = () => {
 
   // hiding main dock buttons
 
-  const blurAdjustmentBlock = document.getElementById(
-    'priv-share-blur-adjustment-block'
-  );
+  // const blurAdjustmentBlock = document.getElementById(
+  //   'priv-share-blur-adjustment-block'
+  // );
 
   const mainDockButtons = document.querySelectorAll(
     '.priv-share-dock-main > .priv-share-dock-item'
@@ -63,7 +63,7 @@ const multiBlurClosingAnimation = () => {
     mainDockButtons.forEach((mainDockButton) => {
       mainDockButton.classList.toggle('priv-share-dock-item-hide');
     });
-    blurAdjustmentBlock.classList.toggle('priv-share-dock-item-hide');
+    // blurAdjustmentBlock.classList.toggle('priv-share-dock-item-hide');
   }, 100);
 };
 
@@ -77,10 +77,10 @@ const settingsOpeningAnimation = () => {
   settingsContent.classList.toggle('priv-share-dock-show-settings-content');
 
   // hiding main dock buttons
-  const blurAdjustmentBlock = document.getElementById(
-    'priv-share-blur-adjustment-block'
-  );
-  blurAdjustmentBlock.classList.toggle('priv-share-dock-item-hide');
+  // const blurAdjustmentBlock = document.getElementById(
+  //   'priv-share-blur-adjustment-block'
+  // );
+  // blurAdjustmentBlock.classList.toggle('priv-share-dock-item-hide');
 
   const mainDockButtons = document.querySelectorAll(
     '.priv-share-dock-main > .priv-share-dock-item'
@@ -108,9 +108,9 @@ const settingsClosingAnimation = () => {
   settingsContent.classList.toggle('priv-share-dock-show-settings-content');
 
   // hiding main dock buttons
-  const blurAdjustmentBlock = document.getElementById(
-    'priv-share-blur-adjustment-block'
-  );
+  // const blurAdjustmentBlock = document.getElementById(
+  //   'priv-share-blur-adjustment-block'
+  // );
 
   const mainDockButtons = document.querySelectorAll(
     '.priv-share-dock-main > .priv-share-dock-item'
@@ -128,7 +128,7 @@ const settingsClosingAnimation = () => {
     mainDockButtons.forEach((mainDockButton) => {
       mainDockButton.classList.toggle('priv-share-dock-item-hide');
     });
-    blurAdjustmentBlock.classList.toggle('priv-share-dock-item-hide');
+    // blurAdjustmentBlock.classList.toggle('priv-share-dock-item-hide');
   }, 100);
 };
 
@@ -145,10 +145,10 @@ const save = async (key, value) => {
 
 const load = async (key) => {
   const value = await chrome.storage.sync.get([key]);
-  console.log(value, typeof value);
+  // console.log(value, typeof value);
   if (Object.keys(value).length === 0) {
     // return Object.keys(COMMON_SECURE_KEYWORDS);
-    return [];
+    return {};
   }
   return value[key];
 
@@ -196,10 +196,17 @@ const addBlur = async () => {
   if (text) {
     addBlurItem(text);
     blurInput.value = '';
-    const currentTexts = await load('blurTexts');
-    currentTexts.push(text);
-    await save('blurTexts', currentTexts);
-    // textsToBlur = currentTexts; // TODO Bug, should I do = text only
+
+    const savedTexts = await load('savedBlurTexts');
+    const currentUrl = window.location.origin + window.location.pathname;
+
+    if (!savedTexts[currentUrl]) {
+      savedTexts[currentUrl] = [];
+    }
+    
+    savedTexts[currentUrl].push(text);
+    await save('savedBlurTexts', savedTexts);
+    // textsToBlur = savedTexts; // TODO Bug, should I do = text only
 
     blurTextOrExpression(document.body, [text]);
   }
@@ -252,10 +259,12 @@ const removeBlur = async (elem) => {
   });
   const text = (elem.getAttribute && elem.getAttribute('data-text'));
 
-  let currentTexts = await load('blurTexts');
-  currentTexts = currentTexts.filter(t => t !== text);
-  await save('blurTexts', currentTexts);
-  // textsToBlur = currentTexts;
+  let savedTexts = await load('savedBlurTexts');
+  const currentUrl = window.location.origin + window.location.pathname;
+
+  savedTexts[currentUrl] = savedTexts[currentUrl].filter(t => t !== text);
+  await save('savedBlurTexts', savedTexts);
+  // textsToBlur = savedTexts;
   document.querySelectorAll('blur').forEach((node) => {
       if ((new RegExp(text, 'g')).test(node.innerText)) {
           node.parentNode.replaceChild(document.createTextNode(node.innerText), node);
@@ -311,7 +320,9 @@ function getCurrentElementCoordinates(currentElement) {
 let currentElement;
 
 function blurArea(event) {
+  console.log(event.preventDefault);
   event.preventDefault();
+
   const { x, y, width, height } = getCurrentElementCoordinates(currentElement);
   console.log(x, y, width, height);
 
@@ -387,8 +398,14 @@ function handleMouseOver(event) {
 let blurWithClickEnabled = false;
 
 const showBorder = () => {
+  const clickBlurButtonSvg = document.getElementById('priv-share-click-blur-button-svg');
+  const clickBlurButtonSvgPath = document.getElementById('priv-share-click-blur-button-svg-path');
+
   if (blurWithClickEnabled) {
     blurWithClickEnabled = false;
+    clickBlurButtonSvg.style.stroke = "#fff";
+    clickBlurButtonSvgPath.fill = "#fff";
+
     window.removeEventListener('mouseover', handleMouseOver);
 
     const dottedLines = document.getElementById('dottedLines');
@@ -399,6 +416,8 @@ const showBorder = () => {
   }
 
   blurWithClickEnabled = true;
+  clickBlurButtonSvg.style.stroke = "cyan";
+    clickBlurButtonSvgPath.fill = "cyan";
 
   window.addEventListener('mouseover', handleMouseOver);
 };
@@ -488,6 +507,45 @@ function startOverlayCreation(e) {
 
 
 
+
+// =======  Save Mode Feature START ==========
+
+const toggleSaveMode = async () => {
+  const currentTexts = await load('savedBlurTexts');
+  console.log(currentTexts);
+  const clickBlurButton = document.getElementById('priv-share-click-blur-button');
+  const highlightBlurButton = document.getElementById('priv-share-highlight-blur-button');
+  const saveButtonSvgPath = document.getElementById('priv-share-save-button-svg-path');
+  const areaBlurTooltip = document.getElementById('priv-share-area-blur-tooltip');
+  const settingsTooltip = document.getElementById('priv-share-settings-tooltip');
+
+  if(saveMode) {
+    saveMode = false
+
+    saveButtonSvgPath.style.fill = "#fff";
+
+    clickBlurButton.style.display = 'block';
+    highlightBlurButton.style.display = 'block';
+
+    areaBlurTooltip.style.left = '165px';
+    settingsTooltip.style.left = '231px';
+
+  } else {
+    saveMode = true;
+
+    saveButtonSvgPath.style.fill = "cyan";
+
+    clickBlurButton.style.display = 'none';
+    highlightBlurButton.style.display = 'none';
+
+    areaBlurTooltip.style.left = '50px';
+    settingsTooltip.style.left = '112px';
+  }
+}
+
+// =======  Save Mode Feature END ==========
+
+
 const showDock = async () => {
 
   const dockHtml = `<div class="priv-share-dock-secondary">
@@ -509,6 +567,7 @@ const showDock = async () => {
           stroke-linejoin="round"
         />
         <path
+          id="priv-share-save-button-svg-path"
           fill-rule="evenodd"
           clip-rule="evenodd"
           d="M18.172 1a2 2 0 0 1 1.414.586l2.828 2.828A2 2 0 0 1 23 5.828V20a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V4a3 3 0 0 1 3-3zM4 3a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h1v-6a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v6h1a1 1 0 0 0 1-1V6.828a2 2 0 0 0-.586-1.414l-1.828-1.828A2 2 0 0 0 17.172 3H17v2a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3V3zm13 18v-6a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v6zM9 3h6v2a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1z"
@@ -663,6 +722,7 @@ const showDock = async () => {
     </button>
     <button id="priv-share-click-blur-button" class="priv-share-button priv-share-dock-item">
       <svg
+        id="priv-share-click-blur-button-svg"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -676,6 +736,7 @@ const showDock = async () => {
           stroke-linejoin="round"
         />
         <path
+          id="priv-share-click-blur-button-svg-path"
           d="M6.417 6.417 5.042 5.042M13.75 6.417l1.375 -1.375m-10.083 10.083L6.417 13.75m3.667 -9.167V2.75m-5.5 7.333H2.75m12.98 5.49 3.568 -1.396a0.458 0.458 0 0 0 0 -0.853l-8.574 -3.35a0.458 0.458 0 0 0 -0.593 0.594l3.349 8.573a0.458 0.458 0 0 0 0.853 0z"
           stroke-width="1.8333333333333333"
           stroke-linecap="round"
@@ -716,6 +777,7 @@ const showDock = async () => {
       </svg>
       <span
         class="priv-share-tooltip-main"
+        id="priv-share-area-blur-tooltip"
         style="left: 165px"
         >Area Blur</span
       >
@@ -829,18 +891,19 @@ const showDock = async () => {
         Back
       </button>
     </div>
-    <div id="priv-share-blur-adjustment-block">
+    <!-- <div id="priv-share-blur-adjustment-block">
       <button id="priv-share-reduce-blur-button" class="priv-share-button">-</button>
       <div id="priv-share-blur-count">10</div>
       <button id="priv-share-increase-blur-button" class="priv-share-button">+</button>
-    </div>
+    </div> --> 
     <button
       class="priv-share-button priv-share-dock-item"
       id="priv-share-multi-settings-button"
     >
       <span
         class="priv-share-tooltip-main"
-        style="left: 343px"
+        id="priv-share-settings-tooltip"
+        style="left: 231px"
         >Settings</span
       >
       <svg
@@ -949,6 +1012,11 @@ const showDock = async () => {
 
   const areaBlurButton = document.getElementById('priv-share-area-blur-button');
   areaBlurButton.addEventListener('click', toggleOverlayCreation);
+
+  const saveModeButton = document.getElementById('priv-share-save-button');
+  saveModeButton.addEventListener('click', toggleSaveMode)
+
+  
 }
 
 showDock();
