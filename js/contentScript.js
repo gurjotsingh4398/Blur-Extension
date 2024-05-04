@@ -137,15 +137,15 @@ const settingsClosingAnimation = () => {
 // const COMMON_SECURE_KEYWORDS = {};
 
 const save = async (key, value) => {
-  console.log('save', key, value);
+  // console.log('save', key, value);
   await chrome.storage.sync.set({ [key]: value });
-  console.log('Settings saved');
+  // console.log('Settings saved');
 
   // localStorage.setItem(key, JSON.stringify(value));
 };
 
 const load = async (key) => {
-  console.log('load', key);
+  // console.log('load', key);
   const value = await chrome.storage.sync.get([key]);
   // console.log(value, typeof value);
   if (Object.keys(value).length === 0) {
@@ -207,7 +207,7 @@ const addBlur = async () => {
     }
     
     savedBlurTexts[currentUrl].push(text);
-    console.log(savedBlurTexts);
+    // console.log(savedBlurTexts);
     await save('savedBlurTexts', savedBlurTexts);
     // textsToBlur = savedBlurTexts; // TODO Bug, should I do = text only
 
@@ -264,7 +264,7 @@ const removeBlur = async (elem) => {
 
   let savedTexts = await load('savedBlurTexts');
   const currentUrl = window.location.origin + window.location.pathname;
-  console.log(savedTexts);
+  // console.log(savedTexts);
 
   savedTexts[currentUrl] = savedTexts[currentUrl].filter(t => t !== text);
   await save('savedBlurTexts', savedTexts);
@@ -304,7 +304,7 @@ const blurHighlightedSelection = () => {
 // =======  BLUR Click Feature START ==========
 
 function getElementOnCoordinates(x, y) {
-  console.log(document.elementFromPoint(x, y))
+  // console.log(document.elementFromPoint(x, y))
   return document.elementFromPoint(x, y);
 }
 
@@ -324,11 +324,11 @@ function getCurrentElementCoordinates(currentElement) {
 let currentElement;
 
 function blurArea(event) {
-  console.log(event.preventDefault);
+  // console.log(event.preventDefault);
   event.preventDefault();
 
   const { x, y, width, height } = getCurrentElementCoordinates(currentElement);
-  console.log(x, y, width, height);
+  // console.log(x, y, width, height);
 
   const scrollX = window.scrollX || window.pageXOffset;
   const scrollY = window.scrollY || window.pageYOffset;
@@ -370,7 +370,7 @@ function handleMouseOver(event) {
 
   const { left, top, bottom, right, width, height } =
     getCurrentElementCoordinates(currentElement);
-  console.log(left, top, bottom, right);
+  // console.log(left, top, bottom, right);
 
   const dottedLines = document.getElementById('dottedLines');
   const topLine = document.getElementById('dottedLineTop');
@@ -451,16 +451,20 @@ function toggleOverlayCreation() {
 
 function startOverlayCreation(e) {
   const areaBlurButton = document.getElementById('priv-share-area-blur-button');
+  
   if (e.target === areaBlurButton) {
     console.log('button');
     return;
   }
 
-  event.preventDefault();
+  e.preventDefault();
 
   isDragging = true;
-  startX = e.clientX + window.pageXOffset;
-  startY = e.clientY + window.pageYOffset;
+  const scrollX = window.scrollX || window.pageXOffset;
+  const scrollY = window.scrollY || window.pageYOffset;
+
+  startX = e.clientX + scrollX;
+  startY = e.clientY + scrollY;
 
   // Create a new overlay
   const overlay = document.createElement('div');
@@ -479,8 +483,8 @@ function startOverlayCreation(e) {
 
   function handleMouseMove(e) {
     if (isDragging) {
-      endX = e.clientX + window.pageXOffset;
-      endY = e.clientY + window.pageYOffset;
+      endX = e.clientX + scrollX;
+      endY = e.clientY + scrollY;
 
       const width = endX - startX;
       const height = endY - startY;
@@ -488,17 +492,40 @@ function startOverlayCreation(e) {
       // Update overlay dimensions
       overlay.style.width = width + 'px';
       overlay.style.height = height + 'px';
+
+      
     }
   }
 
-  function handleMouseUp() {
+  async function handleMouseUp() {
     if (isDragging) {
       isDragging = false;
 
       // Output dimensions and position
-      console.log('Width:', Math.abs(endX - startX));
-      console.log('Height:', Math.abs(endY - startY));
+      console.log('Width:', endX, startX, Math.abs(endX - startX));
+      console.log('Height:', endY, startY, Math.abs(endY - startY));
       console.log('Position (X, Y):', startX, startY);
+
+      // save area blur
+      let savedBlurAreas = await load('savedBlurAreas');
+      const currentUrl = window.location.origin + window.location.pathname;
+      console.log(savedBlurAreas);
+      if (!savedBlurAreas[currentUrl]) {
+        savedBlurAreas[currentUrl] = [];
+      }
+      
+      console.log(savedBlurAreas);
+      const position = {
+        left: startX,
+        top: startY,
+        width: Math.abs(endX - startX),
+        height: Math.abs(endY - startY)
+      }
+      console.log(position);
+      
+      savedBlurAreas[currentUrl].push(position);
+      await save('savedBlurAreas', savedBlurAreas);
+      console.log(savedBlurAreas);
 
       // Remove event listeners for this overlay
       document.removeEventListener('mousemove', handleMouseMove);
@@ -515,8 +542,11 @@ function startOverlayCreation(e) {
 // =======  Save Mode Feature START ==========
 
 const toggleSaveMode = async () => {
+  // await save('savedBlurAreas', []);
   const currentTexts = await load('savedBlurTexts');
   console.log(currentTexts);
+  const currentAreas = await load('savedBlurAreas');
+  console.log(currentAreas);
 
   const clickBlurButton = document.getElementById('priv-share-click-blur-button');
   const highlightBlurButton = document.getElementById('priv-share-highlight-blur-button');
@@ -1033,7 +1063,16 @@ const showDock = async () => {
       blurTextOrExpression(document.body, [text]);
     });
   }
+
+  const savedBlurAreas = await load('savedBlurAreas');
   
+  if (!savedBlurAreas[currentUrl]) {
+    savedBlurAreas[currentUrl] = [];
+  } else {
+    savedBlurAreas[currentUrl].forEach(text => {
+      // TODO area
+    });
+  }
   
 }
 
