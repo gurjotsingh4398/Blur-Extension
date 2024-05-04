@@ -137,6 +137,7 @@ const settingsClosingAnimation = () => {
 // const COMMON_SECURE_KEYWORDS = {};
 
 const save = async (key, value) => {
+  console.log('save', key, value);
   await chrome.storage.sync.set({ [key]: value });
   console.log('Settings saved');
 
@@ -144,6 +145,7 @@ const save = async (key, value) => {
 };
 
 const load = async (key) => {
+  console.log('load', key);
   const value = await chrome.storage.sync.get([key]);
   // console.log(value, typeof value);
   if (Object.keys(value).length === 0) {
@@ -197,16 +199,17 @@ const addBlur = async () => {
     addBlurItem(text);
     blurInput.value = '';
 
-    const savedTexts = await load('savedBlurTexts');
+    const savedBlurTexts = await load('savedBlurTexts');
     const currentUrl = window.location.origin + window.location.pathname;
 
-    if (!savedTexts[currentUrl]) {
-      savedTexts[currentUrl] = [];
+    if (!savedBlurTexts[currentUrl]) {
+      savedBlurTexts[currentUrl] = [];
     }
     
-    savedTexts[currentUrl].push(text);
-    await save('savedBlurTexts', savedTexts);
-    // textsToBlur = savedTexts; // TODO Bug, should I do = text only
+    savedBlurTexts[currentUrl].push(text);
+    console.log(savedBlurTexts);
+    await save('savedBlurTexts', savedBlurTexts);
+    // textsToBlur = savedBlurTexts; // TODO Bug, should I do = text only
 
     blurTextOrExpression(document.body, [text]);
   }
@@ -261,6 +264,7 @@ const removeBlur = async (elem) => {
 
   let savedTexts = await load('savedBlurTexts');
   const currentUrl = window.location.origin + window.location.pathname;
+  console.log(savedTexts);
 
   savedTexts[currentUrl] = savedTexts[currentUrl].filter(t => t !== text);
   await save('savedBlurTexts', savedTexts);
@@ -513,6 +517,7 @@ function startOverlayCreation(e) {
 const toggleSaveMode = async () => {
   const currentTexts = await load('savedBlurTexts');
   console.log(currentTexts);
+
   const clickBlurButton = document.getElementById('priv-share-click-blur-button');
   const highlightBlurButton = document.getElementById('priv-share-highlight-blur-button');
   const saveButtonSvgPath = document.getElementById('priv-share-save-button-svg-path');
@@ -1016,6 +1021,19 @@ const showDock = async () => {
   const saveModeButton = document.getElementById('priv-share-save-button');
   saveModeButton.addEventListener('click', toggleSaveMode)
 
+  const savedBlurTexts = await load('savedBlurTexts');
+  const currentUrl = window.location.origin + window.location.pathname;
+
+  console.log('run')
+  if (!savedBlurTexts[currentUrl]) {
+    savedBlurTexts[currentUrl] = [];
+  } else {
+    savedBlurTexts[currentUrl].forEach(text => {
+      addBlurItem(text)
+      blurTextOrExpression(document.body, [text]);
+    });
+  }
+  
   
 }
 
