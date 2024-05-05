@@ -452,8 +452,8 @@ function toggleOverlayCreation() {
 function startOverlayCreation(e) {
   const areaBlurButton = document.getElementById('priv-share-area-blur-button');
   
-  if (e.target === areaBlurButton) {
-    console.log('button');
+  // console.log('button', e.target, areaBlurButton.contains(e.target));
+  if (e.target === areaBlurButton || areaBlurButton.contains(e.target)) {
     return;
   }
 
@@ -465,6 +465,8 @@ function startOverlayCreation(e) {
 
   startX = e.clientX + scrollX;
   startY = e.clientY + scrollY;
+  endX = startX;
+  endY = startY;
 
   // Create a new overlay
   const overlay = document.createElement('div');
@@ -482,6 +484,7 @@ function startOverlayCreation(e) {
   document.addEventListener('mouseup', handleMouseUp);
 
   function handleMouseMove(e) {
+    console.log("mouseMove");
     if (isDragging) {
       endX = e.clientX + scrollX;
       endY = e.clientY + scrollY;
@@ -498,6 +501,7 @@ function startOverlayCreation(e) {
   }
 
   async function handleMouseUp() {
+    console.log("mouseUp");
     if (isDragging) {
       isDragging = false;
 
@@ -513,19 +517,30 @@ function startOverlayCreation(e) {
       if (!savedBlurAreas[currentUrl]) {
         savedBlurAreas[currentUrl] = [];
       }
-      
-      console.log(savedBlurAreas);
-      const position = {
-        left: startX,
-        top: startY,
-        width: Math.abs(endX - startX),
-        height: Math.abs(endY - startY)
+
+      // console.log(savedBlurAreas);
+
+      const resultWidth = Math.abs(endX - startX);
+      const resultHeight = Math.abs(endY - startY);
+
+      if (resultWidth !== 0 && resultHeight !== 0) {
+        const position = {
+          left: startX,
+          top: startY,
+          width: resultWidth,
+          height: resultHeight
+        }
+        console.log(position);
+        
+        savedBlurAreas[currentUrl].push(position);
+        await save('savedBlurAreas', savedBlurAreas);
+        console.log(savedBlurAreas);
       }
-      console.log(position);
-      
-      savedBlurAreas[currentUrl].push(position);
-      await save('savedBlurAreas', savedBlurAreas);
-      console.log(savedBlurAreas);
+
+      startX=0;
+      startY=0;
+      endX=0;
+      endY=0;
 
       // Remove event listeners for this overlay
       document.removeEventListener('mousemove', handleMouseMove);
