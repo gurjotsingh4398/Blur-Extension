@@ -549,6 +549,17 @@ function startOverlayCreation(e) {
   }
 }
 
+function createOverlay({ width, height, left, top }) {
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  document.body.appendChild(overlay);
+
+  overlay.style.left = `${left}px`;
+  overlay.style.top = `${top}px`;
+  overlay.style.width = `${width}px`;
+  overlay.style.height = `${height}px`;
+}
+
 // =======  BLUR Area Feature END ==========
 
 
@@ -1084,8 +1095,9 @@ const showDock = async () => {
   if (!savedBlurAreas[currentUrl]) {
     savedBlurAreas[currentUrl] = [];
   } else {
-    savedBlurAreas[currentUrl].forEach(text => {
+    savedBlurAreas[currentUrl].forEach(dimensions => {
       // TODO area
+      createOverlay(dimensions);
     });
   }
   
