@@ -441,19 +441,29 @@ function toggleOverlayCreation() {
   isCreatingOverlay = !isCreatingOverlay;
 
   // toggleButton.textContent = isCreatingOverlay ? 'Stop' : 'Start';
+  const deletButtons = document.querySelectorAll('.priv-share-area-blur-delete-button');
 
   if (isCreatingOverlay) {
     document.addEventListener('mousedown', startOverlayCreation);
+
+    deletButtons.forEach(function(button) {
+        button.style.display = 'block';
+    });
   } else {
     document.removeEventListener('mousedown', startOverlayCreation);
+
+    deletButtons.forEach(function(button) {
+      button.style.display = 'none';
+    })
   }
 }
 
 function startOverlayCreation(e) {
   const areaBlurButton = document.getElementById('priv-share-area-blur-button');
-  
+
+   
   // console.log('button', e.target, areaBlurButton.contains(e.target));
-  if (e.target === areaBlurButton || areaBlurButton.contains(e.target)) {
+  if (e.target === areaBlurButton || areaBlurButton.contains(e.target) ) {
     return;
   }
 
@@ -470,8 +480,19 @@ function startOverlayCreation(e) {
 
   // Create a new overlay
   const overlay = document.createElement('div');
-  overlay.className = 'overlay';
+  overlay.className = 'priv-share-overlay';
+
+  // add delete button REEVERSE
+
+  // Append overlay to body
   document.body.appendChild(overlay);
+
+  // Add event listener to delete button
+  deleteButton.addEventListener("click", function() {
+    // Remove overlay from the DOM
+    overlay.remove();
+  });
+  
 
   // Set initial position and dimensions
   overlay.style.left = startX + 'px';
@@ -510,13 +531,6 @@ function startOverlayCreation(e) {
       console.log('Height:', endY, startY, Math.abs(endY - startY));
       console.log('Position (X, Y):', startX, startY);
 
-      // save area blur
-      let savedBlurAreas = await load('savedBlurAreas');
-      const currentUrl = window.location.origin + window.location.pathname;
-      console.log(savedBlurAreas);
-      if (!savedBlurAreas[currentUrl]) {
-        savedBlurAreas[currentUrl] = [];
-      }
 
       // console.log(savedBlurAreas);
 
@@ -524,6 +538,15 @@ function startOverlayCreation(e) {
       const resultHeight = Math.abs(endY - startY);
 
       if (resultWidth !== 0 && resultHeight !== 0) {
+        // save area blur
+        let savedBlurAreas = await load('savedBlurAreas');
+        const currentUrl = window.location.origin + window.location.pathname;
+        console.log(savedBlurAreas);
+
+        if (!savedBlurAreas[currentUrl]) {
+          savedBlurAreas[currentUrl] = [];
+        }
+
         const position = {
           left: startX,
           top: startY,
@@ -531,6 +554,11 @@ function startOverlayCreation(e) {
           height: resultHeight
         }
         console.log(position);
+
+        var deleteButton = document.createElement("div");
+        deleteButton.textContent = "❌";
+        deleteButton.classList.add("priv-share-area-blur-delete-button");
+        overlay.appendChild(deleteButton);
         
         savedBlurAreas[currentUrl].push(position);
         await save('savedBlurAreas', savedBlurAreas);
@@ -551,8 +579,21 @@ function startOverlayCreation(e) {
 
 function createOverlay({ width, height, left, top }) {
   const overlay = document.createElement('div');
-  overlay.className = 'overlay';
+  overlay.className = 'priv-share-overlay';
+  var deleteButton = document.createElement("div");
+  deleteButton.style.display = 'none';
+  deleteButton.textContent = "❌";
+  deleteButton.classList.add("priv-share-area-blur-delete-button");
+  overlay.appendChild(deleteButton);
+
+  // Append overlay to body
   document.body.appendChild(overlay);
+
+  // Add event listener to delete button
+  deleteButton.addEventListener("click", function() {
+    // Remove overlay from the DOM
+    overlay.remove();
+  });
 
   overlay.style.left = `${left}px`;
   overlay.style.top = `${top}px`;
@@ -1091,6 +1132,7 @@ const showDock = async () => {
   }
 
   const savedBlurAreas = await load('savedBlurAreas');
+  console.log(savedBlurAreas)
   
   if (!savedBlurAreas[currentUrl]) {
     savedBlurAreas[currentUrl] = [];
