@@ -463,7 +463,7 @@ function startOverlayCreation(e) {
 
    
   // console.log('button', e.target, areaBlurButton.contains(e.target));
-  if (e.target === areaBlurButton || areaBlurButton.contains(e.target) ) {
+  if (e.target === areaBlurButton || areaBlurButton.contains(e.target)) {
     return;
   }
 
@@ -488,6 +488,7 @@ function startOverlayCreation(e) {
   document.body.appendChild(overlay);
 
   // Add event listener to delete button
+  let deleteButton = document.createElement("div");
   deleteButton.addEventListener("click", function() {
     // Remove overlay from the DOM
     overlay.remove();
@@ -555,7 +556,6 @@ function startOverlayCreation(e) {
         }
         console.log(position);
 
-        var deleteButton = document.createElement("div");
         deleteButton.textContent = "❌";
         deleteButton.classList.add("priv-share-area-blur-delete-button");
         overlay.appendChild(deleteButton);
