@@ -167,12 +167,16 @@ const load = async (key) => {
 
 // ============================================
 
-const addBlurItem = (text) => {
+const addBlurItem = (text, mode) => {
   const blurList = document.getElementById('priv-share-multi-blur-list');
 
   const li = document.createElement('li');
   li.textContent = text;
   li.setAttribute('data-text', text);
+  li.setAttribute('data-mode', saveMode ? 'save' : 'temp');
+  if(mode=== 'save') {
+    li.setAttribute('data-mode', 'save');
+  }
   let span = document.createElement('span');
   span.textContent = ' ❌';
   li.appendChild(span);
@@ -199,17 +203,18 @@ const addBlur = async () => {
     addBlurItem(text);
     blurInput.value = '';
 
-    const savedBlurTexts = await load('savedBlurTexts');
-    const currentUrl = window.location.origin + window.location.pathname;
-
-    if (!savedBlurTexts[currentUrl]) {
-      savedBlurTexts[currentUrl] = [];
+    if(saveMode) {
+      const savedBlurTexts = await load('savedBlurTexts');
+      const currentUrl = window.location.origin + window.location.pathname;
+      
+      if (!savedBlurTexts[currentUrl]) {
+        savedBlurTexts[currentUrl] = [];
+      }
+      
+      savedBlurTexts[currentUrl].push(text);
+      await save('savedBlurTexts', savedBlurTexts);
+      // textsToBlur = savedBlurTexts; // TODO Bug, should I do = text only
     }
-    
-    savedBlurTexts[currentUrl].push(text);
-    // console.log(savedBlurTexts);
-    await save('savedBlurTexts', savedBlurTexts);
-    // textsToBlur = savedBlurTexts; // TODO Bug, should I do = text only
 
     blurTextOrExpression(document.body, [text]);
   }
@@ -261,14 +266,18 @@ const removeBlur = async (elem) => {
       }
   });
   const text = (elem.getAttribute && elem.getAttribute('data-text'));
+  const mode = elem.getAttribute('data-mode');
 
-  let savedTexts = await load('savedBlurTexts');
-  const currentUrl = window.location.origin + window.location.pathname;
-  // console.log(savedTexts);
+  if(mode === 'save') {
+    let savedTexts = await load('savedBlurTexts');
+    const currentUrl = window.location.origin + window.location.pathname;
+    // console.log(savedTexts);
+  
+    savedTexts[currentUrl] = savedTexts[currentUrl].filter(t => t !== text);
+    await save('savedBlurTexts', savedTexts);
+    // textsToBlur = savedTexts;
+  }
 
-  savedTexts[currentUrl] = savedTexts[currentUrl].filter(t => t !== text);
-  await save('savedBlurTexts', savedTexts);
-  // textsToBlur = savedTexts;
   document.querySelectorAll('blur').forEach((node) => {
       if ((new RegExp(text, 'g')).test(node.innerText)) {
           node.parentNode.replaceChild(document.createTextNode(node.innerText), node);
@@ -593,6 +602,9 @@ function createOverlay({ width, height, left, top }) {
   deleteButton.addEventListener("click", function() {
     // Remove overlay from the DOM
     overlay.remove();
+
+    // TODO: remove area from storage, add data element to recognize if save mode item or not
+    // Do above also as this is in 2 places
   });
 
   overlay.style.left = `${left}px`;
@@ -622,7 +634,7 @@ const toggleSaveMode = async () => {
   const settingsTooltip = document.getElementById('priv-share-settings-tooltip');
 
   if(saveMode) {
-    saveMode = false
+    saveMode = false;
 
     saveButtonSvgPath.style.fill = "#fff";
 
@@ -1126,7 +1138,7 @@ const showDock = async () => {
     savedBlurTexts[currentUrl] = [];
   } else {
     savedBlurTexts[currentUrl].forEach(text => {
-      addBlurItem(text)
+      addBlurItem(text, 'save')
       blurTextOrExpression(document.body, [text]);
     });
   }
