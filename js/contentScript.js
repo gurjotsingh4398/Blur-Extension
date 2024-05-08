@@ -552,13 +552,19 @@ function startOverlayCreation(e) {
 
         overlay.setAttribute('data-mode', saveMode ? 'save' : 'temp');
 
-        deleteButton.addEventListener("click", function() {
+        deleteButton.addEventListener("click", async function() {
           // Remove overlay from the DOM
 
-          var overlayMode = overlay.getAttribute("data-mode");
-
+          const overlayMode = overlay.getAttribute("data-mode");
+          
           if (overlayMode === "save") {
-              // change how we store the areas to object and then remove by key
+            let savedBlurAreas = await load('savedBlurAreas');
+            const currentUrl = window.location.origin + window.location.pathname;
+            const overlayId = overlay.getAttribute("data-id");
+
+            delete savedBlurAreas[currentUrl][overlayId]
+
+            await save('savedBlurAreas', savedBlurAreas);
           }
 
           overlay.remove();
@@ -570,7 +576,7 @@ function startOverlayCreation(e) {
           console.log(savedBlurAreas);
   
           if (!savedBlurAreas[currentUrl]) {
-            savedBlurAreas[currentUrl] = [];
+            savedBlurAreas[currentUrl] = {};
           }
   
           const position = {
@@ -579,10 +585,10 @@ function startOverlayCreation(e) {
             width: resultWidth,
             height: resultHeight
           }
-          console.log(position);
+          // console.log(position);
   
           
-          savedBlurAreas[currentUrl].push(position);
+          savedBlurAreas[currentUrl][`${resultWidth}${resultHeight}${startX}${startY}`] = position;
           await save('savedBlurAreas', savedBlurAreas);
           console.log(savedBlurAreas);
         }
@@ -603,6 +609,7 @@ function startOverlayCreation(e) {
 function createOverlay({ width, height, left, top }) {
   const overlay = document.createElement('div');
   overlay.setAttribute('data-mode', 'save');
+  overlay.setAttribute('data-id',  `${width}${height}${left}${top}`)
   overlay.className = 'priv-share-overlay';
   var deleteButton = document.createElement("div");
   deleteButton.style.display = 'none';
@@ -614,11 +621,17 @@ function createOverlay({ width, height, left, top }) {
   document.body.appendChild(overlay);
 
   // Add event listener to delete button
-  deleteButton.addEventListener("click", function() {
+  deleteButton.addEventListener("click", async function() {
     // Remove overlay from the DOM
     overlay.remove();
 
-    // TODO: remove area from storage
+    let savedBlurAreas = await load('savedBlurAreas');
+    const currentUrl = window.location.origin + window.location.pathname;
+    const overlayId = overlay.getAttribute("data-id");
+
+    delete savedBlurAreas[currentUrl][overlayId]
+
+    await save('savedBlurAreas', savedBlurAreas);
   });
 
   overlay.style.left = `${left}px`;
@@ -1161,12 +1174,15 @@ const showDock = async () => {
   console.log(savedBlurAreas)
   
   if (!savedBlurAreas[currentUrl]) {
-    savedBlurAreas[currentUrl] = [];
+    savedBlurAreas[currentUrl] = {};
   } else {
-    savedBlurAreas[currentUrl].forEach(dimensions => {
-      // TODO area
-      createOverlay(dimensions);
-    });
+    const obj  = savedBlurAreas[currentUrl];
+    for (let key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        let dimensions = obj[key];
+        createOverlay(dimensions);
+      }
+    }
   }
   
 }
