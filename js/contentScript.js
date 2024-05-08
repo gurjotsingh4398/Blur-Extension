@@ -498,10 +498,7 @@ function startOverlayCreation(e) {
 
   // Add event listener to delete button
   let deleteButton = document.createElement("div");
-  deleteButton.addEventListener("click", function() {
-    // Remove overlay from the DOM
-    overlay.remove();
-  });
+  
   
 
   // Set initial position and dimensions
@@ -549,29 +546,46 @@ function startOverlayCreation(e) {
 
       if (resultWidth !== 0 && resultHeight !== 0) {
         // save area blur
-        let savedBlurAreas = await load('savedBlurAreas');
-        const currentUrl = window.location.origin + window.location.pathname;
-        console.log(savedBlurAreas);
-
-        if (!savedBlurAreas[currentUrl]) {
-          savedBlurAreas[currentUrl] = [];
-        }
-
-        const position = {
-          left: startX,
-          top: startY,
-          width: resultWidth,
-          height: resultHeight
-        }
-        console.log(position);
-
         deleteButton.textContent = "❌";
         deleteButton.classList.add("priv-share-area-blur-delete-button");
         overlay.appendChild(deleteButton);
-        
-        savedBlurAreas[currentUrl].push(position);
-        await save('savedBlurAreas', savedBlurAreas);
-        console.log(savedBlurAreas);
+
+        overlay.setAttribute('data-mode', saveMode ? 'save' : 'temp');
+
+        deleteButton.addEventListener("click", function() {
+          // Remove overlay from the DOM
+
+          var overlayMode = overlay.getAttribute("data-mode");
+
+          if (overlayMode === "save") {
+              // change how we store the areas to object and then remove by key
+          }
+
+          overlay.remove();
+        });
+
+        if(saveMode) {
+          let savedBlurAreas = await load('savedBlurAreas');
+          const currentUrl = window.location.origin + window.location.pathname;
+          console.log(savedBlurAreas);
+  
+          if (!savedBlurAreas[currentUrl]) {
+            savedBlurAreas[currentUrl] = [];
+          }
+  
+          const position = {
+            left: startX,
+            top: startY,
+            width: resultWidth,
+            height: resultHeight
+          }
+          console.log(position);
+  
+          
+          savedBlurAreas[currentUrl].push(position);
+          await save('savedBlurAreas', savedBlurAreas);
+          console.log(savedBlurAreas);
+        }
       }
 
       startX=0;
@@ -588,6 +602,7 @@ function startOverlayCreation(e) {
 
 function createOverlay({ width, height, left, top }) {
   const overlay = document.createElement('div');
+  overlay.setAttribute('data-mode', 'save');
   overlay.className = 'priv-share-overlay';
   var deleteButton = document.createElement("div");
   deleteButton.style.display = 'none';
@@ -603,8 +618,7 @@ function createOverlay({ width, height, left, top }) {
     // Remove overlay from the DOM
     overlay.remove();
 
-    // TODO: remove area from storage, add data element to recognize if save mode item or not
-    // Do above also as this is in 2 places
+    // TODO: remove area from storage
   });
 
   overlay.style.left = `${left}px`;
